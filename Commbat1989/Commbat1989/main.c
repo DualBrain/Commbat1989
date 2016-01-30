@@ -1,10 +1,18 @@
+//
+//  main.c
+//  Commbat
+//
+//  Created by jim Veneskey on 1/29/16.
+//  Copyright © 2016 Jim Veneskey. All rights reserved.
+//
+
 /* Comm-Bat a two player tank game  by Jim Veneskey 12-18-89 (c)  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <curses.h>
 
-
-#include <conio.h>
-#include <dos.h>
-#include <graphics.h>
 
 #define UP 1
 #define DOWN 2
@@ -22,8 +30,28 @@ int realx,realy;
 int zx=0;     /* testing only */
 
 
-main()
-{
+// Function Prototypes
+void boxit(int y1, int x1, int y2, int x2);
+void clrtext(void);
+void drawscr(void);
+void printat(int row, int column, char* text);
+void movetank(int direction);
+int badmove(int direction);
+void update(int tank);
+void erasetank(int tank);
+
+
+int main(void) {
+    
+    /* init ncurses */
+    WINDOW * mainwin;
+    
+    if (( mainwin = initscr()) == NULL) {
+        fprintf(stderr,"ERROR initializing ncurses.\n");
+        exit(1);
+    }
+    
+    
     /* Define all internally used variables               */
     
     int loopy,loopx;
@@ -32,38 +60,37 @@ main()
     
     /* Initialize BigMap array to all blanks     */
     
-    for(loopy=1; loopy<=84; loopy++)
-        for(loopx=1; loopx<=84; loopx++)
+    for(loopy=1; loopy<=84; loopy++) {
+        for(loopx=1; loopx<=84; loopx++) {
             bigmap[loopy][loopx]=' ';
+        }
+    }
     
-    for(loopy=1; loopy<=2; loopy++)
-        for(loopx=1; loopx<=84; loopx++)
-	       {
-               bigmap[loopy][loopx]='#';
-               bigmap[loopy+82][loopx]='#';
-           }
+    for(loopy=1; loopy<=2; loopy++) {
+        for(loopx=1; loopx<=84; loopx++) {
+            bigmap[loopy][loopx]='#';
+            bigmap[loopy+82][loopx]='#';
+        }
+    }
     
-    for(loopx=1; loopx<=2; loopx++)
-        for(loopy=1; loopy<=84; loopy++)
-        {
+    for(loopx=1; loopx<=2; loopx++) {
+        for(loopy=1; loopy<=84; loopy++) {
             bigmap[loopy][loopx]='#';
             bigmap[loopy][loopx+82]='#';
         }
+    }
     
-    
-    for(loopx=1; loopx<=8; loopx++)
-	   {
-           shields[loopx]=100;
-           twas[loopx]='B';
-       }
+    for(loopx=1; loopx<=8; loopx++) {
+        shields[loopx]=100;
+        twas[loopx]='B';
+    }
     
     /*********** Main programming starts here ***********/
     
     
-    clrscr();
+    curs_set(0);
     drawscr();
     initgame();
-    cursor(1,0);
     views();
     while(keyin != 27)
     {
@@ -88,81 +115,67 @@ main()
             case 35:decoy=3;views();break;
         }
         remote();
+        refresh();
     }
     
-    cursor(12,13);     /* Show Cursor */
+    curs_set(1);     /* Show Cursor */
     return(0);
     
 }
 /* What follows are function declarations */
 
 
+/* BOXIT()   uses upper left and lower right corners as parameters */
 
-
-
-/* BOX()   uses upper left and lower right corners as parameters */
-
-box(y1,x1,y2,x2)
-int y1,x1,y2,x2;
-{
+void boxit(int y1, int x1, int y2, int x2) {
     int temp1;
-    for(temp1=x1; temp1<=x2; temp1++)
-	   {
-           gotoxy(temp1,y1);
-           cputs("Õ");
-           gotoxy(temp1,y2);
-           cputs("Õ");
-           
-       }
+    for(temp1=x1; temp1<=x2; temp1++) {
+        move(temp1,y1);
+        wprintw(stdscr,"#");
+        move(temp1,y2);
+        wprintw(stdscr,"#");
+        
+    }
     
-    for(temp1=y1; temp1<=y2; temp1++)
-	   {
-           gotoxy(x1,temp1);
-           cputs("∫");
-           gotoxy(x2,temp1);
-           cputs("∫");
-       }
-    gotoxy(x1,y1);
-    cputs("…");
-    gotoxy(x1,y2);
-    cputs("»");
-    gotoxy(x2,y1);
-    cputs("ª");
-    gotoxy(x2,y2);
-    cputs("º");
-    return(0);
+    for(temp1=y1; temp1<=y2; temp1++) {
+        move(x1,temp1);
+        wprintw(stdscr,"#");
+        move(x2,temp1);
+        wprintw(stdscr,"#");
+    }
     
+    move(x1,y1);
+    wprintw(stdscr,"#");
+    move(x1,y2);
+    wprintw(stdscr,"#");
+    move(x2,y1);
+    wprintw(stdscr,"#");
+    move(x2,y2);
+    wprintw(stdscr,"#");
 }
 
 /* a print @ type of routine            */
 
-printat(row,column,text)
-int row,column;
-char text[40];
-{
-    gotoxy(column,row);
-    cputs(text);
-    return(0);
+void printat(int row, int column, char* text) {
+    move(column,row);
+    wprintw(stdscr, text);
 }
 
 /* This routine simply clears out the old messages */
-clrtext()
-{
-    gotoxy(3,24);
-    cputs("                                            ");
-    return(0);
+void clrtext(void) {
+    move(3,24);
+    wprintw(stdscr,"                                            ");
 }
 
 /*  This routine calls other routines to set up the main game screen */
 
-drawscr()
-{
-    box(1,39,22,80);
-    box(16,4,22,10);
-    box(16,16,22,22);
-    box(16,28,22,34);
-    box(1,1,15,38);
-    box(23,2,25,79);
+void drawscr(void) {
+    boxit(1,39,22,80);
+    boxit(16,4,22,10);
+    boxit(16,16,22,22);
+    boxit(16,28,22,34);
+    boxit(1,1,15,38);
+    boxit(23,2,25,79);
     printat(1,53,"[ Main Map ]");
     printat(22,54,"[ Map # 1 ]");
     printat(1,6,"[ Comm-Bat Command Listing ]");
@@ -170,16 +183,14 @@ drawscr()
     printat(16,5,"[ D ]");
     printat(16,17,"[ B ]");
     printat(16,29,"[ T ]");
-    return(0);
 }
+
 /* this routine polls the keyboard to see if a key has been struck.
  if not, it returns a zero.
  if so, it returns a value either 1-127 for normal keys or 201-209 for
  keypad.  non valid keys are not supported and ignored.  */
 
-check_keybrd(c)
-int c;
-{
+int check_keybrd(void) {
     if (! kbhit() ) return (0);  /* if no keystruck return with "0" */
     c = getch();                 /* Otherwise check for normal key  */
     if (c) return (c);           /* if it is normal, return it.     */
@@ -187,170 +198,165 @@ int c;
     return (c+100);              /* add 100 to act as a flag.       */
     
 }
+
 /* this routine is responsible for moving the tank if it is ok to do so */
-movetank(direction)
-int direction;
-{
+/* 'tank' is a global... */
+
+void movetank(int direction) {
     int zq;
     
-    if(!shields[tank])
-    {
+    if (!shields[tank]) {
         printat(24,3,"\x7");
         printat(24,3,"That Tank is dead - immobile!           ");
-        return(0);
+        return;
     }
     
     erasetank(tank);
     
     zq=badmove(direction);  /* 0 = Normal, 1 =  RIP, 2 = New Map   */
     
-    if(zq == 1)
-    {
+    if (zq == 1) {
         shields[tank]=0;
         printat(24,3,"Tank has hit map edge and exploded!");
         printat(24,3,"\x7");
         convert(tanky[tank],tankx[tank],tankm[tank]);
-        if((bigmap[realy][realx] !='B') && (bigmap[realy][realx] != 'D'))
-        {
+        if ((bigmap[realy][realx] !='B') && (bigmap[realy][realx] != 'D')) {
             bigmap[realy][realx] = 'X';
-            if(tankm[tank] == map)
-            {
-                gotoxy(tankx[tank]+39,tanky[tank]+1);
-                cputs("X");
+            if(tankm[tank] == map) {
+                move(tankx[tank]+39,tanky[tank]+1);
+                wprintw(stdscr,"X");
             }
         }
         views();
-        return(0);
+        return;
     }
     
-    if(zq == 2)
-    {
+    if(zq == 2) {
         convert(tanky[tank],tankx[tank],tankm[tank]);
         twas[tank]=bigmap[realy] [realx];
         if((twas[tank] !='B') && (twas[tank] !='D'))
             bigmap[realy] [realx] = 48+tank;
         views();
-        return(0);
+        return;
     }
     
-    switch(direction)
-    {
-        case UP:tanky[tank]-=1;break;
-        case DOWN:tanky[tank]+=1;break;
-        case LEFT:tankx[tank]-=1;break;
-        case RIGHT:tankx[tank]+=1;break;
+    switch(direction) {
+        case UP:
+            tanky[tank] -= 1;
+            break;
+            
+        case DOWN:
+            tanky[tank] +=1;
+            break;
+            
+        case LEFT:
+            tankx[tank] -=1;
+            break;
+        case RIGHT:
+            tankx[tank] +=1;
+            break;
     }
     
     update(tank);
     views();
-    return(0);
+    return;
 }
 
 /* This function tests the legality of a move - if it will hit a wall. */
-badmove(direction)
-int direction;
-{
-    if(direction == LEFT  && tankx[tank] > 1)
-        return(0);  /* Tank was not on the edge no further test */
-    else
-        if(direction == LEFT && (! (tankm[tank] % 2)))
-        {
-            tankx[tank]=40;
-            tankm[tank]=tankm[tank]-1;
-            return(2); /* Tank was on edge but EVEN map - adjust and ok */
-        }
-        else
-            if(direction == LEFT)
-                return(1); /* Tank was on edge of an ODD map - bad news!  */
-    
-    if(direction == RIGHT && tankx[tank] < 40)
+int badmove(int direction) {
+    if (direction == LEFT  && tankx[tank] > 1) {
+        return(0);
+    } else if (direction == LEFT && (! (tankm[tank] % 2))) {
+        tankx[tank] = 40;
+        tankm[tank] = tankm[tank] - 1;
+        return(2); /* Tank was on edge but EVEN map - adjust and ok */
+        
+    } else if (direction == LEFT) {
+        return(1); /* Tank was on edge of an ODD map - bad news!  */
+        
+    } else if (direction == RIGHT && tankx[tank] < 40) {
         return(0);  /* Tank was not on edge.  */
-    else
-        if(direction == RIGHT && (tankm[tank] % 2))
-        {
-            tankx[tank]=1;
-            tankm[tank]=tankm[tank]+1;
-            return(2); /* Tank was on ODD map edge - adjust and ok */
-        }
-        else
-            if(direction == RIGHT)
-                return(1);  /* Tank was on edge of EVEN map - bad news! */
-    
-    if(direction == UP && tanky[tank] > 1)
+        
+    } else if (direction == RIGHT && (tankm[tank] % 2)) {
+        tankx[tank] = 1;
+        tankm[tank] = tankm[tank] + 1;
+        return(2); /* Tank was on ODD map edge - adjust and ok */
+        
+    } else if(direction == RIGHT) {
+        return(1);  /* Tank was on edge of EVEN map - bad news! */
+        
+    } else if (direction == UP && tanky[tank] > 1) {
         return(0);  /* Tank was not at edge.  */
-    else
-        if(direction == UP && tankm[tank] > 2)
-        {
-            tanky[tank]=20;
-            tankm[tank]=tankm[tank]-2;
-            return(2);  /* tank rose a map - adjust and ok */
-        }
-        else
-            if(direction == UP)
-                return(1); /* Tank tried to go off top of map */
-    
-    if(direction == DOWN && tanky[tank] < 20)
+        
+    } else if(direction == UP && tankm[tank] > 2) {
+        tanky[tank] = 20;
+        tankm[tank] = tankm[tank] - 2;
+        return(2);  /* tank rose a map - adjust and ok */
+        
+    } else if (direction == UP ) {
+        return(1); /* Tank tried to go off top of map */
+        
+    } else if (direction == DOWN && tanky[tank] < 20) {
         return(0);  /* Tank was not at edge. */
-    else
-        if(direction == DOWN && tankm[tank] < 7)
-        {
-            tanky[tank]=1;
-            tankm[tank]=tankm[tank]+2;
-            return(2);  /* tank descended a map */
-        }
-        else
-            if(direction == DOWN)
-                return(1); /* Tank was on bottom.... */
-    
-    return(0); /* this line should not be needed logically */
+        
+    } else if(direction == DOWN && tankm[tank] < 7) {
+        tanky[tank]=1;
+        tankm[tank]=tankm[tank]+2;
+        return(2);  /* tank descended a map */
+        
+    } else if(direction == DOWN) {
+        return(1); /* Tank was on bottom.... */
+        
+    } else {
+        /* all possibilities *SHOULD* be covered by now..
+         but - just in case...  */
+        return(0);
+    }
 }
 
 /*  UpdateTank(tank #) - updates display of tanks moves   */
-update(tank)
-int tank;
-{
+void update(int tank) {
     convert(tanky[tank],tankx[tank],tankm[tank]);
     twas[tank]=bigmap[realy] [realx];
     if((twas[tank] !='B') && (twas[tank] != 'D'))
         bigmap[realy] [realx] = 48+tank;
-    gotoxy(10,6);
-    printf("Tank X is %d ",tankx[tank]);
-    gotoxy(10,7);
-    printf("Tank Y is %d ",tanky[tank]);
-    gotoxy(10,8);
-    printf("Tank M is %d",tankm[tank]);
-    gotoxy(10,9);
-    printf("Contents of TWAS is %c",twas[tank]);
-    gotoxy(10,10);
-    printf("Tank # = %d",tank);
-    return(0);
+    move(10,6);
+    wprintw(stdscr,"Tank X is %d ",tankx[tank]);
+    move(10,7);
+    wprintw(stdscr,"Tank Y is %d ",tanky[tank]);
+    move(10,8);
+    wprintw(stdscr,"Tank M is %d",tankm[tank]);
+    move(10,9);
+    wprintw(stdscr,"Contents of TWAS is %c",twas[tank]);
+    move(10,10);
+    wprintw(stdscr,"Tank # = %d",tank);
     
 }
+
+
 /*  ERASETANK(tank #) - removes old image of tanks from screen */
-erasetank(tank)
-int tank;
-{
+void erasetank(int tank) {
     convert(tanky[tank],tankx[tank],tankm[tank]);
     bigmap[realy] [realx]=twas[tank];
-    if(tankm[tank] == map)
-    {
-        gotoxy(tankx[tank]+39,tanky[tank]+1);
-        printf("%c",twas[tank]);
+    if(tankm[tank] == map) {
+        move(tankx[tank]+39,tanky[tank]+1);
+        wprintw(stdscr,"%c",twas[tank]);
     }
-    return(0);
 }
+
 /* ShowTank(tank #) - Displays currently selected tank IF on current map */
-showtank(tank)
-int tank;
-{
+void showtank( int tank ) {
     int a,b,c,d;
-    if(tankm[tank] == map)
-    {
-        if(tankx[tank]==1)
+    if (tankm[tank] == map) {
+        if (tankx[tank] == 1) {
             a=0;
-        else if(tankx[tank]==2)
+            
+        } else if (tankx[tank] == 2) {
             a=1;
-        else a=2;
+            
+        } else {
+            a=2;
+        }
         
         if(tankx[tank]==40)
             c=0;
@@ -377,17 +383,6 @@ int tank;
     return(0);
 }
 
-/* Cursor - adjusts the size of cursor in scan lines */
-cursor(a,b)
-char a,b;
-{
-    union REGS r;
-    r.h.ah = 1;
-    r.h.ch = a;
-    r.h.cl = b;
-    int86(0x10,&r,&r);
-    return(0);
-}
 
 /* Remote - this simulates tasking in background */
 remote()
@@ -396,15 +391,15 @@ remote()
     if (zx==100)
         zx=0;
     
-    gotoxy(10,11);
-    printf("Count is %d and counting.",zx);
+    move(10,11);
+    wprintw(stdscr,"Count is %d and counting.",zx);
     return(0);
 }
 /* Initialize game - get base co-ordinates  */
 initgame()
 {
     int loop;
-    gotoxy(2,5);
+    move(2,5);
     printf("Enter base co-ords X,Y,Map ");
     scanf("%d,%d,%d",&basex,&basey,&basem);
     convert(basey,basex,basem);
@@ -435,8 +430,8 @@ int tank;
     for(x=0; x<=4; x++)
         for(y=0; y<=4; y++)
         {
-            gotoxy(29+x,17+y);
-            printf("%c",bigmap[realy-2+y] [realx-2+x]);
+            move(29+x,17+y);
+            wprintw(stdscr,"%c",bigmap[realy-2+y] [realx-2+x]);
         }
     showtank(tank);
     return(0);
@@ -450,8 +445,8 @@ baseview()
     for(x=0; x<=4; x++)
         for(y=0; y<=4; y++)
         {
-            gotoxy(17+x,17+y);
-            printf("%c",bigmap[realy-2+y][realx-2+x]);
+            move(17+x,17+y);
+            wprintw(stdscr,"%c",bigmap[realy-2+y][realx-2+x]);
         }
     return(0);
 }
@@ -465,8 +460,8 @@ int decoy;
     for(x=0; x<=4; x++)
         for(y=0; y<=4; y++)
         {
-            gotoxy(5+x,17+y);
-            printf("%c",bigmap[realy-2+y][realx-2+x]);
+            move(5+x,17+y);
+            wprintw(stdscr,"%c",bigmap[realy-2+y][realx-2+x]);
         }
     return(0);
 }
