@@ -39,7 +39,13 @@ void movetank(int direction);
 int badmove(int direction);
 void update(int tank);
 void erasetank(int tank);
-
+void remote(void);
+void initgame(void);
+void tankview(int tank);
+void baseview(void);
+void decoyview(int decoy);
+void convert(int y, int x, int map);
+void views(void);
 
 int main(void) {
     
@@ -380,108 +386,91 @@ void showtank( int tank ) {
         
         
     }
-    return(0);
 }
 
 
 /* Remote - this simulates tasking in background */
-remote()
-{
+void remote() {
     zx=zx+1;
-    if (zx==100)
+    if (zx==100) {
         zx=0;
-    
+    }
     move(10,11);
     wprintw(stdscr,"Count is %d and counting.",zx);
-    return(0);
 }
+
 /* Initialize game - get base co-ordinates  */
-initgame()
-{
+void initgame() {
     int loop;
     move(2,5);
     printf("Enter base co-ords X,Y,Map ");
-    scanf("%d,%d,%d",&basex,&basey,&basem);
+    scanf("%d,%d,%d", &basex, &basey, &basem);
     convert(basey,basex,basem);
     bigmap[realy][realx]='B';
-    for(loop=1; loop<=8; loop++)
-    {
-        tankx[loop]=basex;
-        tanky[loop]=basey;
-        tankm[loop]=basem;
-        if(loop<4)
-        {
-            decoyx[loop]=basex+(4*(loop-1))+2;
-            decoyy[loop]=basey+(4*(loop-1))+2;
-            decoym[loop]=basem;
-            convert(decoyy[loop],decoyx[loop],decoym[loop]);
+    for(loop=1; loop<=8; loop++) {
+        tankx[loop] = basex;
+        tanky[loop] = basey;
+        tankm[loop] = basem;
+        if (loop < 4) {
+            decoyx[loop] = basex + ( 4 * (loop - 1)) + 2;
+            decoyy[loop] = basey + ( 4 * (loop - 1)) + 2;
+            decoym[loop] = basem;
+            convert(decoyy[loop], decoyx[loop], decoym[loop]);
             bigmap[realy][realx]='D';
         }
-        
     }
-    return(0);
 }
+
 /* Update Tank viewport                     */
-tankview(tank)
-int tank;
-{
-    int x,y;
-    convert(tanky[tank],tankx[tank],tankm[tank]);
-    for(x=0; x<=4; x++)
-        for(y=0; y<=4; y++)
-        {
-            move(29+x,17+y);
-            wprintw(stdscr,"%c",bigmap[realy-2+y] [realx-2+x]);
+void tankview(int tank) {
+    int x, y;
+    convert(tanky[tank], tankx[tank], tankm[tank]);
+    for(x=0; x<=4; x++) {
+        for(y=0; y<=4; y++) {
+            move(29 + x, 17 + y);
+            wprintw(stdscr,"%c", bigmap[realy - 2 + y] [realx - 2 + x]);
         }
+    }
     showtank(tank);
-    return(0);
 }
 
 /* Update Base viewport */
-baseview()
-{
+void baseview() {
     int x,y;
-    convert(basey,basex,basem);
-    for(x=0; x<=4; x++)
-        for(y=0; y<=4; y++)
-        {
+    convert(basey, basex, basem);
+    for(x=0; x<=4; x++) {
+        for(y=0; y<=4; y++) {
             move(17+x,17+y);
             wprintw(stdscr,"%c",bigmap[realy-2+y][realx-2+x]);
         }
-    return(0);
+    }
 }
 
 /* Update Decoy viewport */
-decoyview(decoy)
-int decoy;
-{
+void decoyview(int decoy) {
     int x,y;
-    convert(decoyy[decoy],decoyx[decoy],decoym[decoy]);
-    for(x=0; x<=4; x++)
-        for(y=0; y<=4; y++)
-        {
+    convert(decoyy[decoy], decoyx[decoy], decoym[decoy]);
+    for(x=0; x<=4; x++) {
+        for(y=0; y<=4; y++) {
             move(5+x,17+y);
             wprintw(stdscr,"%c",bigmap[realy-2+y][realx-2+x]);
         }
-    return(0);
+    }
 }
 
 /* Convert Tank Psuedo co-ords into actual BigMap Co-ords */
-convert(y,x,map)
-int y,x,map;
-{
-    if(map % 2)
-        realx = x+2;
-        else realx = x+42;
-            realy=y+2+((map+1)/2-1)*20;
-            return(0);
+void convert(int y, int x, int map) {
+    if (map % 2) {
+        realx = x + 2;
+    } else  {
+        realx = x + 42;
+        realy = y + 2 + ((map + 1) /2-1) * 20;
+    }
 }
 
 /* Package all view handling nice and neat */
-views()
-{
+void views() {
     tankview(tank);
     baseview();
     decoyview(decoy);
-    return(0);
 }
