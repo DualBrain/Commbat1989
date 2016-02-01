@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <curses.h>
-
+#include <sys/select.h>
 
 #define UP 1
 #define DOWN 2
@@ -46,6 +46,8 @@ void baseview(void);
 void decoyview(int decoy);
 void convert(int y, int x, int map);
 void views(void);
+int check_keybrd(void);
+int kbhit(void);
 
 int main(void) {
     
@@ -98,11 +100,9 @@ int main(void) {
     drawscr();
     initgame();
     views();
-    while(keyin != 27)
-    {
+    while(keyin != 27) {
         keyin = check_keybrd();
-        switch(keyin)
-        {
+        switch(keyin) {
             case 172:movetank(UP);break;
             case 180:movetank(DOWN);break;
             case 175:movetank(LEFT);break;
@@ -129,6 +129,32 @@ int main(void) {
     
 }
 /* What follows are function declarations */
+
+
+/* kbhit - taken from: http://www.linuxquestions.org/questions/programming-9/way-of-use-of-kbhit-function-in-gcc-776487/ */
+
+int kbhit(void) {
+    struct timeval tv;
+    fd_set read_fd;
+    
+    tv.tv_sec=0;
+    tv.tv_usec=0;
+    FD_ZERO(&read_fd);
+    FD_SET(0,&read_fd);
+    
+    if (select(1, &read_fd, NULL, NULL, &tv) == -1) {
+        /* no characters available */
+        return 0;
+    }
+    
+    if (FD_ISSET(0, &read_fd)) {
+        /* characters are available.. */
+        return 1;
+    }
+    
+    /* default to no characters being available.. */
+    return 0;
+}
 
 
 /* BOXIT()   uses upper left and lower right corners as parameters */
@@ -198,11 +224,10 @@ void drawscr(void) {
 
 int check_keybrd(void) {
     if (! kbhit() ) return (0);  /* if no keystruck return with "0" */
-    c = getch();                 /* Otherwise check for normal key  */
+    int c = getch();             /* Otherwise check for normal key  */
     if (c) return (c);           /* if it is normal, return it.     */
     c = getch();                 /* Must be an extended key - again */
     return (c+100);              /* add 100 to act as a flag.       */
-    
 }
 
 /* this routine is responsible for moving the tank if it is ok to do so */
